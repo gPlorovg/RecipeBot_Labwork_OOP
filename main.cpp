@@ -2,8 +2,59 @@
 #include <assert.h>
 #include <iostream>
 
-class Ingredient {
-public:
+enum class NodeType {Ingredient, Operation};
+
+template <typename T>
+class Node {
+ public:
+  Node();
+  Node(NodeType type, T data);
+  Node(const Node &n);
+  ~Node();
+
+  T GetData() const;
+  NodeType GetType() const;
+  T GetNext() const;
+  void SetNext(T child);
+
+ protected:
+  NodeType type;
+  T data;
+ private:
+  Node* next;
+};
+
+//template <typename T>
+//class QueueNode: public Node<T, QueueNode<T>*> {
+// public:
+//  QueueNode();
+//  QueueNode(NodeType type, QueueNode* node, T data);
+//  QueueNode(const QueueNode &qn);
+//  ~QueueNode();
+//};
+
+template <typename T>
+class TreeNode final: private Node<T> {
+ public:
+  TreeNode();
+  TreeNode(TreeNode* node, T data);
+  TreeNode(const TreeNode &qn);
+  ~TreeNode();
+
+  int GetChildCount() const;
+  TreeNode* GetChild() const;
+  void AppendChild(TreeNode* node);
+
+  using Node<T>::GetData;
+  using Node<T>::GetType;
+
+ private:
+  int childCount;
+  TreeNode** childList;
+};
+
+class Ingredient final{
+ public:
   Ingredient();
   Ingredient(const std::string &name, const std::string &unit, int c);
   Ingredient(const Ingredient &ingr) noexcept ;
@@ -13,14 +64,14 @@ public:
   [[nodiscard]] std::string GetUnit() const;
   void SetCount(int c);
   void SetUnit(const std::string &u);
-private:
+ private:
   std::string name;
   std::string unit;
   int count;
 };
 
-class Operation {
-public:
+class Operation final{
+ public:
   Operation();
   Operation(const std::string &action, float time);
   Operation(const Operation &op) noexcept ;
@@ -29,9 +80,31 @@ public:
   [[nodiscard]] float GetTime() const;
   [[nodiscard]] float GetTime(int count) const;
   void SetTime(float t);
-private:
+ private:
   std::string action;
   float time;
+};
+
+
+class Recipe {
+ public:
+  Recipe();
+  Recipe(const std::string name, float time,
+         Node<const Ingredient&> *dataHead);
+  Recipe(const Recipe &rc);
+  ~Recipe();
+  std::string GetName() const;
+  float GetTime() const;
+  virtual Node<const Ingredient&>* GetData() const;
+ private:
+  std::string name;
+  float time;
+  Node<const Ingredient&> *dataHead;
+};
+
+class RecipeTree final: public Recipe {
+ public:
+  virtual TreeNode<const Ingredient&>* GetData() const override;
 };
 
 Ingredient::Ingredient():name(" "), unit(" "), count(0) {};
