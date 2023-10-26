@@ -38,7 +38,7 @@ template <typename T>
 class Node {
  public:
   Node();
-  Node(NodeType type, T* data);
+  Node(NodeType type_, T* data_);
   Node(const Node &n);
   ~Node();
 
@@ -59,7 +59,7 @@ template <typename T>
 class TreeNode final: public Node<T> {
  public:
   TreeNode();
-  TreeNode(NodeType type, T* data);
+  TreeNode(NodeType type_, T* data_);
   TreeNode(const TreeNode &tn);
   ~TreeNode();
 
@@ -76,13 +76,13 @@ class TreeNode final: public Node<T> {
 class Recipe {
  public:
   Recipe();
-  Recipe(const std::string name, float time, Node<Ingredient> *dataHead);
+  Recipe(const std::string& name_, float time_, Node<Ingredient> *dataHead_);
   Recipe(const Recipe &rc);
   ~Recipe();
 
   std::string GetName() const;
   float GetTime() const;
-  virtual Node<Ingredient> GetData() const;
+  virtual void Print() const;
 
  protected:
   std::string name;
@@ -93,12 +93,47 @@ class Recipe {
 
 class RecipeTree final: public Recipe {
  public:
-  TreeNode<Ingredient> GetData() const override;
+  void Print() const override;
  private:
   TreeNode<Ingredient> *dataHead;
 };
 
+Recipe::Recipe(): name(" "), time(0), dataHead(nullptr) {};
+Recipe::Recipe(const std::string &name_, float time_, Node<Ingredient>
+    *dataHead_) {
+  name = name_;
+  dataHead = dataHead_;
+  if (time_ > 0)
+    time = time_;
+  else
+    std::cout << "Error in Recipe::Recipe(const std::string name_, float time_,"
+                 " Node<Ingredient> *dataHead_)\n Time can't be " << time_
+                 << std::endl;
+}
+Recipe::Recipe(const Recipe &rc): name(rc.name), time(rc.time),
+  dataHead(rc.dataHead) {};
+Recipe::~Recipe() {
+  delete dataHead;
+}
+std::string Recipe::GetName() const {
+  return name;
+}
+float Recipe::GetTime() const {
+  return time;
+}
+void Recipe::Print() const {
+  Node<Ingredient> *p = dataHead;
+  std::string outString;
+  while (p != nullptr) {
+    if (p->GetType() == NodeType::Ingredient) {
+      outString = "[" + std::to_string(p->GetData()->GetCount()) + " " +
+          p->GetData()->GetUnit() + " of " + p->GetData()->GetName() + "]";
 
+    } else if (p->GetType() == NodeType::Operation){
+      outString = "(" + p->GetData()->GetName() + " : " + p->GetData()->GetT
+    }
+  }
+}
 
 template <typename T>
 Node<T>::Node(): type(NodeType::None), data(nullptr), next(nullptr) {};
@@ -113,6 +148,7 @@ Node<T>::Node(const Node &n): type(n.type), data(n.data), next(n.next) {};
 template <typename T>
 Node<T>::~Node() {
   delete data;
+  delete next;
 }
 
 template <typename T>
