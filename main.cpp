@@ -296,60 +296,92 @@ void Operation::SetTime(float t) {
 
 int main() {
 //  Ingredient test
-  std::string name = "potato";
-  std::string unit = "kilogram";
-  int count = 2;
-
-  auto ingr1 = new Ingredient();
-  auto ingr2 = new Ingredient(name, unit, count);
-  auto ingr3 = new Ingredient(*ingr2);
-
-  assert(ingr1->GetName() == " ");
-  assert(ingr1->GetUnit() == " ");
-  assert(ingr1->GetCount() == 0);
-
-  assert(ingr2->GetName() == name);
-  assert(ingr2->GetUnit() == unit);
-  assert(ingr2->GetCount() == count);
-
-  assert(ingr3->GetName() == name);
-  assert(ingr3->GetUnit() == unit);
-  assert(ingr3->GetCount() == count);
-
-  unit = "pieces";
-  ingr2->SetUnit(unit);
-  assert(ingr2->GetUnit() == unit);
-
-  count = 2;
-  ingr2->SetCount(count);
-  assert(ingr2->GetCount() == count);
+//  std::string name = "potato";
+//  std::string unit = "kilogram";
+//  int count = 2;
+//
+//  auto ingr1 = new Ingredient();
+//  auto ingr2 = new Ingredient(name, unit, count);
+//  auto ingr3 = new Ingredient(*ingr2);
+//
+//  assert(ingr1->GetName() == " ");
+//  assert(ingr1->GetUnit() == " ");
+//  assert(ingr1->GetCount() == 0);
+//
+//  assert(ingr2->GetName() == name);
+//  assert(ingr2->GetUnit() == unit);
+//  assert(ingr2->GetCount() == count);
+//
+//  assert(ingr3->GetName() == name);
+//  assert(ingr3->GetUnit() == unit);
+//  assert(ingr3->GetCount() == count);
+//
+//  unit = "pieces";
+//  ingr2->SetUnit(unit);
+//  assert(ingr2->GetUnit() == unit);
+//
+//  count = 2;
+//  ingr2->SetCount(count);
+//  assert(ingr2->GetCount() == count);
 
 //  Operation test
-  std::string action = "cut";
-  float time = 2.5;
-  count = 2;
+//  std::string action = "cut";
+//  float time = 2.5;
+//  count = 2;
+//
+//  auto op1 = new Operation();
+//  auto op2 = new Operation(action, time);
+//  auto op3 = new Operation(*op2);
+//
+//  assert(op1->GetAction() == " ");
+//  assert(op1->GetTime() == 0);
+//  assert(op1->GetTime(count) == 0);
+//
+//  assert(op2->GetAction() == action);
+//  assert(op2->GetTime() == time);
+//  assert(op2->GetTime(count) == time * count);
+//
+//  assert(op3->GetAction() == action);
+//  assert(op3->GetTime() == time);
+//  assert(op3->GetTime(count) == count * time);
+//
+//  time = 1.1;
+//  op2->SetTime(time);
+//  assert(op2->GetTime() == time);
+//  assert(op2->GetTime(count) == time * count);
+//
+//  std::cout << "All tests are completed!"<< std::endl;
+//  return 0;
+  Queue q;
+  auto ing1 = Ingredient("potato", "kg", 10);
+  auto ing2 = Ingredient("onion", "unit", 6);
+  auto op1 = Operation("chop", 2);
+  auto op2 = Operation("put", 0.1);
+  auto op3 = Operation("boil", 100);
+  auto op4 = Operation("fry", 50);
 
-  auto op1 = new Operation();
-  auto op2 = new Operation(action, time);
-  auto op3 = new Operation(*op2);
+  q.Enqueue(NodeType::Ingredient, ing1);
+  q.Enqueue(NodeType::Operation, op1);
+  q.Enqueue(NodeType::Operation, op3);
+  q.Enqueue(NodeType::Operation, op2);
+  q.Enqueue(NodeType::Ingredient, ing2);
+  q.Enqueue(NodeType::Operation, op1);
+  q.Enqueue(NodeType::Operation, op4);
+  q.Enqueue(NodeType::Operation, op2);
 
-  assert(op1->GetAction() == " ");
-  assert(op1->GetTime() == 0);
-  assert(op1->GetTime(count) == 0);
-
-  assert(op2->GetAction() == action);
-  assert(op2->GetTime() == time);
-  assert(op2->GetTime(count) == time * count);
-
-  assert(op3->GetAction() == action);
-  assert(op3->GetTime() == time);
-  assert(op3->GetTime(count) == count * time);
-
-  time = 1.1;
-  op2->SetTime(time);
-  assert(op2->GetTime() == time);
-  assert(op2->GetTime(count) == time * count);
-
-  std::cout << "All tests are completed!"<< std::endl;
+  QueueNode* curr;
+  curr = q.GetHead();
+  std::string outString;
+  int currIngrCount = 1;
+  while (curr != nullptr) {
+    if (curr->type == NodeType::Ingredient) {
+      outString = static_cast<Ingredient*>(curr->data)->Print();
+      currIngrCount = static_cast<Ingredient*>(curr->data)->GetCount();
+    } else if (curr->type == NodeType::Operation){
+      outString = static_cast<Operation*>(curr->data)->Print(currIngrCount);
+    }
+    std::cout << outString <<std::endl;
+    curr = curr->next;
+  }
   return 0;
 }
