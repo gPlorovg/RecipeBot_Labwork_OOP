@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <iostream>
 #include <vector>
+#include <iomanip>
 
 class Ingredient final{
  public:
@@ -96,15 +97,21 @@ class Tree{
   }
 };
 
-void print(TreeNode *tn) {
+void print(TreeNode *tn, int margin, bool isFirst) {
+  std::string outString;
   if (tn->type == NodeType::Ingredient)
-    std::cout << static_cast<Ingredient*>(tn->data)->Print();
+    outString = static_cast<Ingredient*>(tn->data)->Print();
   else if (tn->type == NodeType::Operation)
-    std::cout << static_cast<Operation*>(tn->data)->Print() + " <- ";
-
+    outString = static_cast<Operation*>(tn->data)->Print() + " <- ";
+  if (!isFirst)
+    std::cout << std::setfill(' ') << std::setw(margin + outString.length()) <<
+    outString;
+  else
+    std::cout << outString;
   if (!tn->children.empty())
     for(TreeNode* u : tn->children)
-      print(u);
+      print(u, margin + outString.length(),
+            u == tn->children.front());
   else
     std::cout << std::endl;
 }
@@ -137,7 +144,7 @@ int main() {
   tr.AddNode(op1);
   tr.AddNode(ing1);
 
-  print(tr.GetRoot());
+  print(tr.GetRoot(), 0, true);
   return 0;
 }
 
