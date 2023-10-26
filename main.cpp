@@ -2,63 +2,11 @@
 #include <assert.h>
 #include <iostream>
 
-enum class NodeType {Ingredient, Operation};
-
-template <typename T>
-class Node {
- public:
-  Node();
-  Node(NodeType type, T data);
-  Node(const Node &n);
-  ~Node();
-
-  T GetData() const;
-  NodeType GetType() const;
-  T GetNext() const;
-  void SetNext(T child);
-
- protected:
-  NodeType type;
-  T data;
- private:
-  Node* next;
-};
-
-//template <typename T>
-//class QueueNode: public Node<T, QueueNode<T>*> {
-// public:
-//  QueueNode();
-//  QueueNode(NodeType type, QueueNode* node, T data);
-//  QueueNode(const QueueNode &qn);
-//  ~QueueNode();
-//};
-
-template <typename T>
-class TreeNode final: private Node<T> {
- public:
-  TreeNode();
-  TreeNode(TreeNode* node, T data);
-  TreeNode(const TreeNode &qn);
-  ~TreeNode();
-
-  int GetChildCount() const;
-  TreeNode* GetChild() const;
-  void AppendChild(TreeNode* node);
-
-  using Node<T>::GetData;
-  using Node<T>::GetType;
-
- private:
-  int childCount;
-  TreeNode** childList;
-};
-
 class Ingredient final{
  public:
   Ingredient();
   Ingredient(const std::string &name, const std::string &unit, int c);
   Ingredient(const Ingredient &ingr) noexcept ;
-//  ~Ingredient();
   [[nodiscard]] int GetCount() const;
   [[nodiscard]] std::string GetName() const;
   [[nodiscard]] std::string GetUnit() const;
@@ -75,7 +23,6 @@ class Operation final{
   Operation();
   Operation(const std::string &action, float time);
   Operation(const Operation &op) noexcept ;
-//  ~Operation();
   [[nodiscard]] std::string GetAction() const;
   [[nodiscard]] float GetTime() const;
   [[nodiscard]] float GetTime(int count) const;
@@ -85,27 +32,147 @@ class Operation final{
   float time;
 };
 
+enum class NodeType {None, Ingredient, Operation};
+
+template <typename T>
+class Node {
+ public:
+  Node();
+  Node(NodeType type, T* data);
+  Node(const Node &n);
+  ~Node();
+
+  [[nodiscard]] T* GetData() const;
+  [[nodiscard]] NodeType GetType() const;
+  [[nodiscard]] Node* GetNext() const;
+  void SetNext(Node* child);
+
+ protected:
+  NodeType type;
+  T* data;
+ private:
+  Node* next;
+};
+
+
+template <typename T>
+class TreeNode final: public Node<T> {
+ public:
+  TreeNode();
+  TreeNode(NodeType type, T* data);
+  TreeNode(const TreeNode &tn);
+  ~TreeNode();
+
+  [[nodiscard]] int GetChildCount() const;
+  [[nodiscard]] TreeNode* GetChild(int count) const;
+  void AppendChild(TreeNode* node);
+
+ private:
+  int childCount;
+  TreeNode** childList;
+};
+
 
 class Recipe {
  public:
   Recipe();
-  Recipe(const std::string name, float time,
-         Node<const Ingredient&> *dataHead);
+  Recipe(const std::string name, float time, Node<Ingredient> *dataHead);
   Recipe(const Recipe &rc);
   ~Recipe();
+
   std::string GetName() const;
   float GetTime() const;
-  virtual Node<const Ingredient&>* GetData() const;
- private:
+  virtual Node<Ingredient> GetData() const;
+
+ protected:
   std::string name;
   float time;
-  Node<const Ingredient&> *dataHead;
+ private:
+  Node<Ingredient> *dataHead;
 };
 
 class RecipeTree final: public Recipe {
  public:
-  virtual TreeNode<const Ingredient&>* GetData() const override;
+  TreeNode<Ingredient> GetData() const override;
+ private:
+  TreeNode<Ingredient> *dataHead;
 };
+
+
+
+template <typename T>
+Node<T>::Node(): type(NodeType::None), data(nullptr), next(nullptr) {};
+
+template <typename T>
+Node<T>::Node(NodeType type_, T* data_): type(type_), data(data_), next(nullptr)
+{};
+
+template <typename T>
+Node<T>::Node(const Node &n): type(n.type), data(n.data), next(n.next) {};
+
+template <typename T>
+Node<T>::~Node() {
+  delete data;
+}
+
+template <typename T>
+T* Node<T>::GetData() const {
+  return data;
+}
+
+template <typename T>
+NodeType Node<T>::GetType() const {
+  return type;
+}
+
+template <typename T>
+Node<T>* Node<T>::GetNext() const {
+  return next;
+}
+
+template <typename T>
+void Node<T>::SetNext(Node<T> *child) {
+  next = child;
+}
+
+template <typename T>
+TreeNode<T>::TreeNode(): Node<T>(), childCount(0), childList(nullptr) {};
+
+template <typename T>
+TreeNode<T>::TreeNode(NodeType type_, T* data_): Node<T>(type_, data_),
+                                                 childCount(0), childList(nullptr){};
+
+template <typename T>
+TreeNode<T>::TreeNode(const TreeNode &tn): Node<T>(tn.type, tn.data),
+                                           childCount(tn.childCount), childList(tn.childList) {};
+
+template <typename T>
+TreeNode<T>::~TreeNode() {
+  for (TreeNode** u = childList; u < u + childCount; u++)
+    delete (*u);
+}
+
+template <typename T>
+int TreeNode<T>::GetChildCount() const {
+  return childCount;
+}
+
+template <typename T>
+TreeNode<T>* TreeNode<T>::GetChild(int count) const {
+  if (0 <= count && count < childCount )
+    return childList[count];
+  std::cout << "Error in TreeNode<T>* TreeNode<T>::GetChild(int count) const \n"
+               "Index " << count << " out of range 0:" << childCount
+            << std::endl;
+  return nullptr;
+}
+
+template <typename T>
+void TreeNode<T>::AppendChild(TreeNode<T> *node) {
+  childCount++;
+  childList[childCount] = node;
+}
+
 
 Ingredient::Ingredient():name(" "), unit(" "), count(0) {};
 Ingredient::Ingredient(const std::string &name, const std::string &unit,
