@@ -1,6 +1,7 @@
 #include <string>
 #include <assert.h>
 #include <iostream>
+#include <vector>
 
 class Ingredient final{
  public:
@@ -40,41 +41,37 @@ enum class NodeType {None, Ingredient, Operation};
 struct TreeNode {
   NodeType type;
   void* data;
-  int childCount;
-  TreeNode** children;
+  std::vector<TreeNode*> children;
 };
 
 class Tree{
  public:
   Tree() {
-    root = new TreeNode{NodeType::None, nullptr, 0, new TreeNode*[2]};
+    root = new TreeNode{NodeType::None, nullptr};
     curr = root;
   };
-  template<typename T>
-  void AddNode(NodeType type, const T& item) {
-    if (type == NodeType::Ingredient) {
-      AppendChildNode(type, item);
-      curr = root;
-    } else if (type == NodeType::Operation) {
-      TreeNode* tmp = FindNode(curr, item.Print());
-      if (tmp == nullptr){
-        curr = AppendChildNode(type, item);
-      }
-      else
-        curr = tmp;
+  void AddNode(const Ingredient& item) {
+    AppendChildNode(NodeType::Ingredient, item);
+    curr = root;
     }
+  void AddNode(const Operation& item) {
+    TreeNode* tmp = FindNode(curr, item);
+    if (tmp == nullptr)
+      curr = AppendChildNode(NodeType::Operation, item);
+    else
+      curr = tmp;
   }
 
   [[nodiscard]] bool IsFull() const{
     return curr == root;
   }
 
-  static TreeNode* FindNode(TreeNode* parent, const std::string &s) {
+  static TreeNode* FindNode(TreeNode* parent, const Operation& op) {
     if (parent != nullptr) {
-      for (TreeNode** u = parent->children;
-           u < parent->children + parent->childCount; u++) {
-        if (static_cast<Operation*>((*u)->data)->Print() == s)
-          return *u;
+      for (TreeNode* tn : parent->children) {
+        std::string s = static_cast<Operation*>(tn->data)->GetAction();
+        if (s == op.GetAction())
+          return tn;
       }
     }
     return nullptr;
@@ -89,20 +86,12 @@ class Tree{
   TreeNode* root;
   template<class T>
   TreeNode* AppendChildNode(NodeType type, const T& item) {
-    TreeNode* tn = new TreeNode;
+    auto tn = new TreeNode;
     tn->type = type;
     tn->data = new T(item);
-    tn->children = nullptr;
-    tn->childCount = 0;
 
-    curr->childCount += 1;
-    if (curr->childCount > (sizeof(curr->children) / sizeof(TreeNode*)) / 2) {
-      TreeNode** newChildren = new TreeNode*[curr->childCount * 2];
-      for(int i = 0; i < curr->childCount; i++)
-        newChildren[i] = curr->children[i];
-      curr->children = newChildren;
-    }
-    curr->children[curr->childCount] = tn;
+    curr->children.push_back(tn);
+
     return tn;
   }
 };
@@ -111,30 +100,42 @@ void print(TreeNode *tn) {
   if (tn->type == NodeType::Ingredient)
     std::cout << static_cast<Ingredient*>(tn->data)->Print();
   else if (tn->type == NodeType::Operation)
-    std::cout << static_cast<Operation*>(tn->data)->Print();
+    std::cout << static_cast<Operation*>(tn->data)->Print() + " <- ";
 
-  if (tn->children != nullptr)
-    for(TreeNode** u = tn->children; u < tn->children + tn->childCount; u++)
-      print(*u);
+  if (!tn->children.empty())
+    for(TreeNode* u : tn->children)
+      print(u);
+  else
+    std::cout << std::endl;
 }
 
 int main() {
   Tree tr;
   auto ing1 = Ingredient("potato", "kg", 10);
   auto ing2 = Ingredient("onion", "unit", 6);
+  auto ing3 = Ingredient("carrot", "unit", 2);
   auto op1 = Operation("chop", 2);
   auto op2 = Operation("put", 0.1);
   auto op3 = Operation("boil", 100);
   auto op4 = Operation("fry", 50);
+  tr.AddNode(op2);
+  tr.AddNode(op3);
+  tr.AddNode(op1);
+  tr.AddNode(ing1);
 
-  tr.AddNode<Ingredient>(NodeType::Ingredient, ing1);
-  tr.AddNode<Operation>(NodeType::Operation, op1);
-  tr.AddNode<Operation>(NodeType::Operation, op3);
-  tr.AddNode<Operation>(NodeType::Operation, op2);
-  tr.AddNode<Ingredient>(NodeType::Ingredient, ing2);
-  tr.AddNode<Operation>(NodeType::Operation, op1);
-  tr.AddNode<Operation>(NodeType::Operation, op4);
-  tr.AddNode<Operation>(NodeType::Operation, op2);
+  tr.AddNode(op2);
+  tr.AddNode(op4);
+  tr.AddNode(op1);
+  tr.AddNode(ing2);
+
+  tr.AddNode(op2);
+  tr.AddNode(op4);
+  tr.AddNode(op1);
+  tr.AddNode(ing3);
+
+  tr.AddNode(op4);
+  tr.AddNode(op1);
+  tr.AddNode(ing1);
 
   print(tr.GetRoot());
   return 0;
