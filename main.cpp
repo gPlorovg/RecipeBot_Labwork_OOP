@@ -10,6 +10,7 @@ class Ingredient final{
   [[nodiscard]] int GetCount() const;
   [[nodiscard]] std::string GetName() const;
   [[nodiscard]] std::string GetUnit() const;
+  std::string Print() const;
   void SetCount(int c);
   void SetUnit(const std::string &u);
  private:
@@ -26,83 +27,118 @@ class Operation final{
   [[nodiscard]] std::string GetAction() const;
   [[nodiscard]] float GetTime() const;
   [[nodiscard]] float GetTime(int count) const;
+  std::string Print(int count=1) const;
   void SetTime(float t);
  private:
   std::string action;
   float time;
 };
 
+
 enum class NodeType {None, Ingredient, Operation};
 
-template <typename T>
-class Node {
- public:
-  Node();
-  Node(NodeType type_, T* data_);
-  Node(const Node &n);
-  ~Node();
-
-  [[nodiscard]] T* GetData() const;
-  [[nodiscard]] NodeType GetType() const;
-  [[nodiscard]] Node* GetNext() const;
-  void SetNext(Node* child);
-
- protected:
+struct QueueNode {
   NodeType type;
-  T* data;
- private:
-  Node* next;
+  void* data;
+  QueueNode* next;
 };
 
-
-template <typename T>
-class TreeNode final: public Node<T> {
+class Queue {
  public:
-  TreeNode();
-  TreeNode(NodeType type_, T* data_);
-  TreeNode(const TreeNode &tn);
-  ~TreeNode();
+  Queue(): head(nullptr), tail(nullptr) {};
+  ~Queue() {
+    while (!IsEmpty()) {
+      QueueNode* temp = head;
+      head = head->next;
 
-  [[nodiscard]] int GetChildCount() const;
-  [[nodiscard]] TreeNode* GetChild(int count) const;
-  void AppendChild(TreeNode* node);
+      if (temp->type == NodeType::Ingredient)
+        delete static_cast<Ingredient*>(temp->data);
+      else if (temp->type == NodeType::Operation)
+        delete static_cast<Operation*>(temp->data);
 
+      delete temp;
+    }
+  }
+  template<typename T>
+  void Enqueue(NodeType type, const T& item) {
+    QueueNode* newNode = new QueueNode;
+    newNode->type = type;
+    newNode->data = new T(item);
+    newNode->next = nullptr;
+
+    if (IsEmpty()) {
+      head = tail = newNode;
+    } else {
+      tail->next = newNode;
+      tail = newNode;
+    }
+  }
+
+  template<class T>
+  T Dequeue() {
+    if (IsEmpty()) {
+      throw std::runtime_error("Queue is empty!");
+    }
+
+    T item = *static_cast<T*>(head->data);
+    QueueNode* temp = head;
+    head = head->next;
+    delete static_cast<T*>(temp->data);
+    delete temp;
+
+    if (head == nullptr) {
+      tail = nullptr;
+    }
+
+    return item;
+  }
+
+
+  [[nodiscard]] bool IsEmpty() const {
+    return head == nullptr;
+  }
+  [[nodiscard]] QueueNode* GetHead() const {
+    return head;
+  }
  private:
-  int childCount;
-  TreeNode** childList;
+  QueueNode* head;
+  QueueNode* tail;
 };
+
+
+
+
 
 
 class Recipe {
  public:
   Recipe();
-  Recipe(const std::string& name_, float time_, Node<Ingredient> *dataHead_);
+  Recipe(const std::string& name_, float time_, Queue* data_);
   Recipe(const Recipe &rc);
   ~Recipe();
 
-  std::string GetName() const;
-  float GetTime() const;
+  [[nodiscard]] std::string GetName() const;
+  [[nodiscard]] float GetTime() const;
   virtual void Print() const;
 
  protected:
   std::string name;
   float time;
  private:
-  Node<Ingredient> *dataHead;
+  Queue* data;
 };
 
 class RecipeTree final: public Recipe {
  public:
   void Print() const override;
  private:
-  TreeNode<Ingredient> *dataHead;
+  Tree* data;
 };
 
-Recipe::Recipe(): name(" "), time(0), dataHead(nullptr) {};
-Recipe::Recipe(const std::string &name_, float time_, Node<Ingredient>
-    *dataHead_) {
+Recipe::Recipe(): name(" "), time(0), data(nullptr) {};
+Recipe::Recipe(const std::string &name_, float time_, Queue* data_) {
   name = name_;
-  dataHead = dataHead_;
+  data = data_;
   if (time_ > 0)
     time = time_;
   else
@@ -110,10 +146,10 @@ Recipe::Recipe(const std::string &name_, float time_, Node<Ingredient>
                  " Node<Ingredient> *dataHead_)\n Time can't be " << time_
                  << std::endl;
 }
-Recipe::Recipe(const Recipe &rc): name(rc.name), time(rc.time),
-  dataHead(rc.dataHead) {};
+Recipe::Recipe(const Recipe &rc): name(rc.name), time(rc.time), data(rc.data)
+{};
 Recipe::~Recipe() {
-  delete dataHead;
+  delete data;
 }
 std::string Recipe::GetName() const {
   return name;
@@ -122,93 +158,61 @@ float Recipe::GetTime() const {
   return time;
 }
 void Recipe::Print() const {
-  Node<Ingredient> *p = dataHead;
+  QueueNode* curr;
+  curr = data->GetHead();
   std::string outString;
-  while (p != nullptr) {
-    if (p->GetType() == NodeType::Ingredient) {
-      outString = "[" + std::to_string(p->GetData()->GetCount()) + " " +
-          p->GetData()->GetUnit() + " of " + p->GetData()->GetName() + "]";
-
-    } else if (p->GetType() == NodeType::Operation){
-      outString = "(" + p->GetData()->GetName() + " : " + p->GetData()->GetT
+  int currIngrCount = 1;
+  while (curr != nullptr) {
+    if (curr->type == NodeType::Ingredient) {
+      outString = static_cast<Ingredient*>(curr->data)->Print();
+      currIngrCount = static_cast<Ingredient*>(curr->data)->GetCount();
+    } else if (curr->type == NodeType::Operation){
+      outString = static_cast<Operation*>(curr->data)->Print(currIngrCount);
     }
+    std::cout << outString <<std::endl;
+    curr = curr->next;
   }
 }
 
-template <typename T>
-Node<T>::Node(): type(NodeType::None), data(nullptr), next(nullptr) {};
 
-template <typename T>
-Node<T>::Node(NodeType type_, T* data_): type(type_), data(data_), next(nullptr)
-{};
 
-template <typename T>
-Node<T>::Node(const Node &n): type(n.type), data(n.data), next(n.next) {};
-
-template <typename T>
-Node<T>::~Node() {
-  delete data;
-  delete next;
-}
-
-template <typename T>
-T* Node<T>::GetData() const {
-  return data;
-}
-
-template <typename T>
-NodeType Node<T>::GetType() const {
-  return type;
-}
-
-template <typename T>
-Node<T>* Node<T>::GetNext() const {
-  return next;
-}
-
-template <typename T>
-void Node<T>::SetNext(Node<T> *child) {
-  next = child;
-}
-
-template <typename T>
-TreeNode<T>::TreeNode(): Node<T>(), childCount(0), childList(nullptr) {};
-
-template <typename T>
-TreeNode<T>::TreeNode(NodeType type_, T* data_): Node<T>(type_, data_),
-                                                 childCount(0), childList(nullptr){};
-
-template <typename T>
-TreeNode<T>::TreeNode(const TreeNode &tn): Node<T>(tn.type, tn.data),
-                                           childCount(tn.childCount), childList(tn.childList) {};
-
-template <typename T>
-TreeNode<T>::~TreeNode() {
-  for (TreeNode** u = childList; u < u + childCount; u++)
-    delete (*u);
-}
-
-template <typename T>
-int TreeNode<T>::GetChildCount() const {
-  return childCount;
-}
-
-template <typename T>
-TreeNode<T>* TreeNode<T>::GetChild(int count) const {
-  if (0 <= count && count < childCount )
-    return childList[count];
-  std::cout << "Error in TreeNode<T>* TreeNode<T>::GetChild(int count) const \n"
-               "Index " << count << " out of range 0:" << childCount
-            << std::endl;
-  return nullptr;
-}
-
-template <typename T>
-void TreeNode<T>::AppendChild(TreeNode<T> *node) {
-  childCount++;
-  childList[childCount] = node;
-}
-
+//template <typename T>
+//TreeNode<T>::TreeNode(): Node<T>(), childCount(0), childList(nullptr) {};
+//
+//template <typename T>
+//TreeNode<T>::TreeNode(NodeType type_, T* data_): Node<T>(type_, data_),
+//                                                 childCount(0), childList(nullptr){};
+//
+//template <typename T>
+//TreeNode<T>::TreeNode(const TreeNode &tn): Node<T>(tn.type, tn.data),
+//                                           childCount(tn.childCount), childList(tn.childList) {};
+//
+//template <typename T>
+//TreeNode<T>::~TreeNode() {
+//  for (TreeNode** u = childList; u < u + childCount; u++)
+//    delete (*u);
+//}
+//
+//template <typename T>
+//int TreeNode<T>::GetChildCount() const {
+//  return childCount;
+//}
+//
+//template <typename T>
+//TreeNode<T>* TreeNode<T>::GetChild(int count) const {
+//  if (0 <= count && count < childCount )
+//    return childList[count];
+//  std::cout << "Error in TreeNode<T>* TreeNode<T>::GetChild(int count) const \n"
+//               "Index " << count << " out of range 0:" << childCount
+//            << std::endl;
+//  return nullptr;
+//}
+//
+//template <typename T>
+//void TreeNode<T>::AppendChild(TreeNode<T> *node) {
+//  childCount++;
+//  childList[childCount] = node;
+//}
 
 Ingredient::Ingredient():name(" "), unit(" "), count(0) {};
 Ingredient::Ingredient(const std::string &name, const std::string &unit,
@@ -225,6 +229,9 @@ Ingredient::Ingredient(const Ingredient &ingr) noexcept {
   name = ingr.GetName();
   unit = ingr.GetUnit();
   count = ingr.GetCount();
+}
+std::string Ingredient::Print() const {
+  return "[" + std::to_string(count) + " " + unit + " of " + name + "]";
 }
 std::string Ingredient::GetName() const {
   return name;
@@ -253,11 +260,14 @@ Operation::Operation(const std::string &action, float t):action(action) {
   else
     std::cerr << "Error in 'Operation::Operation(const std::string &action, "
                  "float t)'\nTime must be positive number.\nReceived: " << t
-                 << std::endl;
+              << std::endl;
 };
 Operation::Operation(const Operation &op) noexcept {
   action = op.GetAction();
   time = op.GetTime();
+}
+std::string Operation::Print(int count) const {
+  return "(" + action + " : " + std::to_string(GetTime(count)) + ")";
 }
 std::string Operation::GetAction() const {
   return action;
@@ -271,7 +281,7 @@ float Operation::GetTime(int count) const {
   else
     std::cerr << "Error in 'float Operation::GetTime(int count) const'\n"
                  "Count must be positive number\nReceived: " << count <<
-                 std::endl;
+              std::endl;
   return time;
 }
 void Operation::SetTime(float t) {
@@ -282,6 +292,7 @@ void Operation::SetTime(float t) {
                  "positive number.\nReceived: " << t << std::endl;
   }
 }
+
 
 int main() {
 //  Ingredient test
