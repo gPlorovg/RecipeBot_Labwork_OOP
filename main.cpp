@@ -356,6 +356,7 @@ float Recipe::GetTime() const {
 }
 std::string Recipe::Print() const {
   std::stringstream stream;
+  stream << name << " | " << time << '\n';
   QueueNode* curr;
   curr = data->GetHead();
   int currIngrCount = 1;
@@ -382,7 +383,9 @@ RecipeTree::~RecipeTree() {
   data = nullptr;
 };
 std::string RecipeTree::Print() const {
-  return data->Print();
+  std::stringstream stream;
+  stream << name << " | " << time << '\n';
+  return stream.str() + data->Print();
 }
 
 int main() {
@@ -462,8 +465,12 @@ int main() {
   q.Enqueue(NodeType::Operation, op1);
   q.Enqueue(NodeType::Operation, op4);
   q.Enqueue(NodeType::Operation, op2);
+  std::string name = "Borshch";
+  float time = 36000.30;
+  auto r = new Recipe(name, time, &q);
+  assert(r->GetName() == name);
+  assert(r->GetTime() == time);
 
-  auto r = new Recipe("name", 1, &q);
   std::cout << r->Print();
 
 // Tree Recipe test
@@ -488,8 +495,15 @@ int main() {
   tr.AddNode(op1);
   tr.AddNode(ing1);
 
-  auto rt = new RecipeTree("nameTree", 3, &tr);
+  name = "Salad";
+  time = 200;
+  auto rt = new RecipeTree(name, time, &tr);
   std::cout << rt->Print();
 
+  assert(rt->GetName() == name);
+  assert(rt->GetTime() == time);
+
+  std::cout << std::endl;
+  std::cout << "All tests are completed!"<< std::endl;
   return 0;
 }
