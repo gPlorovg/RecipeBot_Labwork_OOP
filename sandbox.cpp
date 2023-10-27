@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <iomanip>
+#include <sstream>
 
 class Ingredient final{
  public:
@@ -63,9 +64,9 @@ class Tree{
       curr = tmp;
   }
 
-  [[nodiscard]] bool IsFull() const{
-    return curr == root;
-  }
+//  [[nodiscard]] bool IsFull() const{
+//    return curr == root;
+//  }
 
   static TreeNode* FindNode(TreeNode* parent, const Operation& op) {
     if (parent != nullptr) {
@@ -82,39 +83,45 @@ class Tree{
     return root;
   }
 
+  std::string Print() {
+    Out(root, 0, true);
+    return stream.str();
+  }
+
  private:
   TreeNode* curr;
   TreeNode* root;
+  std::stringstream stream;
+
   template<class T>
   TreeNode* AppendChildNode(NodeType type, const T& item) {
     auto tn = new TreeNode;
     tn->type = type;
     tn->data = new T(item);
-
     curr->children.push_back(tn);
-
     return tn;
+  }
+
+  void Out(TreeNode *tn, int margin, bool isFirst) {
+    std::string outString;
+    if (tn->type == NodeType::Ingredient)
+      outString = static_cast<Ingredient*>(tn->data)->Print();
+    else if (tn->type == NodeType::Operation)
+      outString = static_cast<Operation*>(tn->data)->Print() + " <- ";
+    if (!isFirst)
+      stream<< std::setfill(' ') << std::setw(margin + outString.length()) <<
+            outString;
+    else
+      stream << outString;
+    if (!tn->children.empty())
+      for(TreeNode* u : tn->children)
+        Out(u, margin + outString.length(),
+              u == tn->children.front());
+    else
+      stream << std::endl;
   }
 };
 
-void print(TreeNode *tn, int margin, bool isFirst) {
-  std::string outString;
-  if (tn->type == NodeType::Ingredient)
-    outString = static_cast<Ingredient*>(tn->data)->Print();
-  else if (tn->type == NodeType::Operation)
-    outString = static_cast<Operation*>(tn->data)->Print() + " <- ";
-  if (!isFirst)
-    std::cout << std::setfill(' ') << std::setw(margin + outString.length()) <<
-    outString;
-  else
-    std::cout << outString;
-  if (!tn->children.empty())
-    for(TreeNode* u : tn->children)
-      print(u, margin + outString.length(),
-            u == tn->children.front());
-  else
-    std::cout << std::endl;
-}
 
 int main() {
   Tree tr;
@@ -144,7 +151,7 @@ int main() {
   tr.AddNode(op1);
   tr.AddNode(ing1);
 
-  print(tr.GetRoot(), 0, true);
+  std::cout << tr.Print();
   return 0;
 }
 
