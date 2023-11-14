@@ -85,6 +85,7 @@ int main() {
   q.Enqueue(NodeType::Operation, op1);
   q.Enqueue(NodeType::Operation, op4);
   q.Enqueue(NodeType::Operation, op2);
+
   std::string name = "Borshch";
   float time = 36000.30;
   auto r = new Recipe(name, time, &q);
