@@ -6,8 +6,7 @@
 
 #include "Ingredient.h"
 #include "Operation.h"
-
-enum class NodeType {None, Ingredient, Operation};
+#include "NodeType.h"
 
 struct QueueNode {
   NodeType type;
