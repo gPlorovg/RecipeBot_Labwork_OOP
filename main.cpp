@@ -1,8 +1,6 @@
 #include <string>
 #include <assert.h>
 #include <iostream>
-#include <iomanip>
-#include <vector>
 
 #include "Ingredient.h"
 #include "Operation.h"
