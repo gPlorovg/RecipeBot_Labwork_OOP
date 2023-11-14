@@ -7,94 +7,8 @@
 #include "Ingredient.h"
 #include "Operation.h"
 #include "NodeType.h"
-
-struct QueueNode {
-  NodeType type;
-  void* data;
-  QueueNode* next;
-};
-
-class Queue {
- public:
-  Queue();
-  ~Queue();
-  template<typename T>
-  void Enqueue(NodeType type, const T& item);
-
-  template<typename T>
-  T Dequeue();
-
-  [[nodiscard]] bool IsEmpty() const;
-  [[nodiscard]] QueueNode* GetHead() const;
-
- private:
-  QueueNode* head;
-  QueueNode* tail;
-};
-
-struct TreeNode {
-  NodeType type;
-  void* data;
-  std::vector<TreeNode*> children;
-};
-
-class Tree{
- public:
-  Tree();
-  ~Tree();
-
-  void AddNode(const Ingredient& item);
-  void AddNode(const Operation& item);
-  [[nodiscard]] TreeNode* GetRoot() const;
-  std::string Print();
-
- private:
-  TreeNode* curr;
-  TreeNode* root;
-  std::stringstream stream;
-
-  TreeNode* FindNode(const Operation& op);
-
-  template<typename T>
-  TreeNode* AppendChildNode(NodeType type, const T& item);
-
-  void Out(TreeNode *tn, int margin, bool isFirst);
-  void Delete(TreeNode *tn);
-};
-
-class Recipe {
- public:
-  Recipe();
-  Recipe(const std::string& name_, float time_, Queue* data_);
-  Recipe(const Recipe &rc);
-  ~Recipe();
-
-  [[nodiscard]] std::string GetName() const;
-  [[nodiscard]] float GetTime() const;
-  virtual std::string Print() const;
-
- protected:
-  std::string name;
-  float time;
- private:
-  Queue* data;
-};
-
-class RecipeTree final: public Recipe {
- public:
-  RecipeTree();
-  RecipeTree(const std::string& name_, float time_, Tree* data_);
-  RecipeTree(const RecipeTree &rt);
-  ~RecipeTree();
-
-  std::string Print() const override;
- private:
-  Tree* data;
-};
-
-
-
-
+#include "Queue.h"
+#include "Tree.h"
 
 Queue::Queue(): head(nullptr), tail(nullptr) {};
 Queue::~Queue() {
@@ -151,80 +65,37 @@ QueueNode* Queue::GetHead() const {
   return head;
 };
 
-Tree::Tree() {
-  root = new TreeNode{NodeType::None, nullptr};
-  curr = root;
+class Recipe {
+ public:
+  Recipe();
+  Recipe(const std::string& name_, float time_, Queue* data_);
+  Recipe(const Recipe &rc);
+  ~Recipe();
+
+  [[nodiscard]] std::string GetName() const;
+  [[nodiscard]] float GetTime() const;
+  virtual std::string Print() const;
+
+ protected:
+  std::string name;
+  float time;
+ private:
+  Queue* data;
 };
-Tree::~Tree() {
-  Delete(root);
+
+class RecipeTree final: public Recipe {
+ public:
+  RecipeTree();
+  RecipeTree(const std::string& name_, float time_, Tree* data_);
+  RecipeTree(const RecipeTree &rt);
+  ~RecipeTree();
+
+  std::string Print() const override;
+ private:
+  Tree* data;
 };
-void Tree::AddNode(const Ingredient &item) {
-  AppendChildNode(NodeType::Ingredient, item);
-  curr = root;
-};
-void Tree::AddNode(const Operation &item) {
-  TreeNode* tmp = FindNode(item);
-  if (tmp == nullptr)
-    curr = AppendChildNode(NodeType::Operation, item);
-  else
-    curr = tmp;
-};
-TreeNode* Tree::GetRoot() const {
-  return root;
-};
-std::string Tree::Print() {
-  Out(root, 0, true);
-  return stream.str();
-}
-TreeNode* Tree::FindNode(const Operation& op) {
-  for (TreeNode* tn : curr->children) {
-    std::string s = static_cast<Operation*>(tn->data)->GetAction();
-    if (s == op.GetAction())
-      return tn;
-  }
-  return nullptr;
-};
-template<typename T>
-TreeNode* Tree::AppendChildNode(NodeType type, const T &item) {
-  auto tn = new TreeNode;
-  tn->type = type;
-  tn->data = new T(item);
-  curr->children.push_back(tn);
-  return tn;
-};
-void Tree::Out(TreeNode *tn, int margin, bool isFirst) {
-  std::string outString;
-  if (tn->type == NodeType::Ingredient)
-    outString = static_cast<Ingredient*>(tn->data)->Print();
-  else if (tn->type == NodeType::Operation)
-    outString = static_cast<Operation*>(tn->data)->Print() + " <- ";
-  if (!isFirst)
-    stream<< std::setfill(' ') << std::setw(margin + outString.length()) <<
-          outString;
-  else
-    stream << outString;
-  if (!tn->children.empty())
-    for(TreeNode* u : tn->children)
-      Out(u, margin + outString.length(),
-          u == tn->children.front());
-  else
-    stream << std::endl;
-};
-void Tree::Delete(TreeNode *tn) {
-  if (tn == nullptr)
-    return;
-  else {
-    for(TreeNode* u : tn->children)
-      Delete(u);
-    if (tn->type == NodeType::Ingredient)
-      delete static_cast<Ingredient*>(tn->data);
-    else if (tn->type == NodeType::Operation)
-      delete static_cast<Operation*>(tn->data);
-    else if (tn->type == NodeType::None)
-      return;
-    delete tn;
-  }
-}
+
+
 
 Recipe::Recipe(): name(" "), time(0), data(nullptr) {};
 Recipe::Recipe(const std::string &name_, float time_, Queue* data_) {
