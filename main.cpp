@@ -4,37 +4,8 @@
 #include <iomanip>
 #include <vector>
 
-class Ingredient final{
- public:
-  Ingredient();
-  Ingredient(const std::string &name, const std::string &unit, int c);
-  Ingredient(const Ingredient &ingr) noexcept ;
-  [[nodiscard]] int GetCount() const;
-  [[nodiscard]] std::string GetName() const;
-  [[nodiscard]] std::string GetUnit() const;
-  std::string Print() const;
-  void SetCount(int c);
-  void SetUnit(const std::string &u);
- private:
-  std::string name;
-  std::string unit;
-  int count;
-};
-
-class Operation final{
- public:
-  Operation();
-  Operation(const std::string &action, float time);
-  Operation(const Operation &op) noexcept ;
-  [[nodiscard]] std::string GetAction() const;
-  [[nodiscard]] float GetTime() const;
-  [[nodiscard]] float GetTime(int count) const;
-  std::string Print(int count=1) const;
-  void SetTime(float t);
- private:
-  std::string action;
-  float time;
-};
+#include "Ingredient.h"
+#include "Operation.h"
 
 enum class NodeType {None, Ingredient, Operation};
 
@@ -122,84 +93,9 @@ class RecipeTree final: public Recipe {
   Tree* data;
 };
 
-Ingredient::Ingredient():name(" "), unit(" "), count(0) {};
-Ingredient::Ingredient(const std::string &name, const std::string &unit,
-                       int c):name(name), unit(unit) {
-  if (c > 0)
-    count = c;
-  else
-    std::cerr << "Error in 'Ingredient::Ingredient(const std::string &name, "
-                 "const std::string &unit, int c)'\nCount must be "
-                 "positive number\nReceived: " << c << std::endl;
 
-};
-Ingredient::Ingredient(const Ingredient &ingr) noexcept {
-  name = ingr.GetName();
-  unit = ingr.GetUnit();
-  count = ingr.GetCount();
-}
-std::string Ingredient::Print() const {
-  return "[" + std::to_string(count) + " " + unit + " of " + name + "]";
-}
-std::string Ingredient::GetName() const {
-  return name;
-}
-std::string Ingredient::GetUnit() const {
-  return unit;
-}
-int Ingredient::GetCount() const {
-  return count;
-}
-void Ingredient::SetUnit(const std::string &u) {
-  unit = u;
-}
-void Ingredient::SetCount(int c) {
-  if (c > 0)
-    count = c;
-  else
-    std::cerr << "Error in 'void Ingredient::SetCount(int c)'\nCount must be"
-                 " positive number\nReceived: " << c << std::endl;
-}
 
-Operation::Operation():action(" "), time(0) {};
-Operation::Operation(const std::string &action, float t):action(action) {
-  if (t > 0)
-    time = t;
-  else
-    std::cerr << "Error in 'Operation::Operation(const std::string &action, "
-                 "float t)'\nTime must be positive number.\nReceived: " << t
-              << std::endl;
-};
-Operation::Operation(const Operation &op) noexcept {
-  action = op.GetAction();
-  time = op.GetTime();
-}
-std::string Operation::Print(int count) const {
-  return "(" + action + " : " + std::to_string(GetTime(count)) + ")";
-}
-std::string Operation::GetAction() const {
-  return action;
-}
-float Operation::GetTime() const {
-  return time;
-}
-float Operation::GetTime(int count) const {
-  if (count > 0)
-    return time * (float)count;
-  else
-    std::cerr << "Error in 'float Operation::GetTime(int count) const'\n"
-                 "Count must be positive number\nReceived: " << count <<
-              std::endl;
-  return time;
-}
-void Operation::SetTime(float t) {
-  if (t > 0) {
-    time = t;
-  } else {
-    std::cerr << "Error in 'void Operation::SetTime(float t)'\nTime must be "
-                 "positive number.\nReceived: " << t << std::endl;
-  }
-}
+
 
 Queue::Queue(): head(nullptr), tail(nullptr) {};
 Queue::~Queue() {
