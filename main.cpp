@@ -9,6 +9,7 @@
 #include "NodeType.h"
 #include "Queue.h"
 #include "Tree.h"
+#include "Recipe.h"
 
 Queue::Queue(): head(nullptr), tail(nullptr) {};
 Queue::~Queue() {
@@ -65,153 +66,8 @@ QueueNode* Queue::GetHead() const {
   return head;
 };
 
-class Recipe {
- public:
-  Recipe();
-  Recipe(const std::string& name_, float time_, Queue* data_);
-  Recipe(const Recipe &rc);
-  ~Recipe();
-
-  [[nodiscard]] std::string GetName() const;
-  [[nodiscard]] float GetTime() const;
-  virtual std::string Print() const;
-
- protected:
-  std::string name;
-  float time;
- private:
-  Queue* data;
-};
-
-class RecipeTree final: public Recipe {
- public:
-  RecipeTree();
-  RecipeTree(const std::string& name_, float time_, Tree* data_);
-  RecipeTree(const RecipeTree &rt);
-  ~RecipeTree();
-
-  std::string Print() const override;
- private:
-  Tree* data;
-};
-
-
-
-Recipe::Recipe(): name(" "), time(0), data(nullptr) {};
-Recipe::Recipe(const std::string &name_, float time_, Queue* data_) {
-  name = name_;
-  data = data_;
-  if (time_ > 0)
-    time = time_;
-  else
-    std::cout << "Error in Recipe::Recipe(const std::string name_, float time_,"
-                 " Node<Ingredient> *dataHead_)\n Time can't be " << time_
-              << std::endl;
-}
-Recipe::Recipe(const Recipe &rc): name(rc.name), time(rc.time), data(rc.data)
-{};
-Recipe::~Recipe() {
-  delete data;
-  data = nullptr;
-}
-std::string Recipe::GetName() const {
-  return name;
-}
-float Recipe::GetTime() const {
-  return time;
-}
-std::string Recipe::Print() const {
-  std::stringstream stream;
-  stream << name << " | " << time << '\n';
-  QueueNode* curr;
-  curr = data->GetHead();
-  int currIngrCount = 1;
-  while (curr != nullptr) {
-    if (curr->type == NodeType::Ingredient) {
-      stream << static_cast<Ingredient*>(curr->data)->Print();
-      currIngrCount = static_cast<Ingredient*>(curr->data)->GetCount();
-    } else if (curr->type == NodeType::Operation){
-      stream << static_cast<Operation*>(curr->data)->Print(currIngrCount);
-    }
-    stream <<'\n';
-    curr = curr->next;
-  }
-  return stream.str();
-}
-
-RecipeTree::RecipeTree(): Recipe() {};
-RecipeTree::RecipeTree(const std::string& name_, float time_, Tree* data_):
-    Recipe(name_, time_, nullptr), data(data_) {};
-RecipeTree::RecipeTree(const RecipeTree &rt):
-    Recipe(rt.name, rt.time, nullptr), data(rt.data){};
-RecipeTree::~RecipeTree() {
-  delete data;
-  data = nullptr;
-};
-std::string RecipeTree::Print() const {
-  std::stringstream stream;
-  stream << name << " | " << time << '\n';
-  return stream.str() + data->Print();
-}
 
 int main() {
-//  Ingredient test
-//  std::string name = "potato";
-//  std::string unit = "kilogram";
-//  int count = 2;
-//
-//  auto ingr1 = new Ingredient();
-//  auto ingr2 = new Ingredient(name, unit, count);
-//  auto ingr3 = new Ingredient(*ingr2);
-//
-//  assert(ingr1->GetName() == " ");
-//  assert(ingr1->GetUnit() == " ");
-//  assert(ingr1->GetCount() == 0);
-//
-//  assert(ingr2->GetName() == name);
-//  assert(ingr2->GetUnit() == unit);
-//  assert(ingr2->GetCount() == count);
-//
-//  assert(ingr3->GetName() == name);
-//  assert(ingr3->GetUnit() == unit);
-//  assert(ingr3->GetCount() == count);
-//
-//  unit = "pieces";
-//  ingr2->SetUnit(unit);
-//  assert(ingr2->GetUnit() == unit);
-//
-//  count = 2;
-//  ingr2->SetCount(count);
-//  assert(ingr2->GetCount() == count);
-
-//  Operation test
-//  std::string action = "cut";
-//  float time = 2.5;
-//  count = 2;
-//
-//  auto op1 = new Operation();
-//  auto op2 = new Operation(action, time);
-//  auto op3 = new Operation(*op2);
-//
-//  assert(op1->GetAction() == " ");
-//  assert(op1->GetTime() == 0);
-//  assert(op1->GetTime(count) == 0);
-//
-//  assert(op2->GetAction() == action);
-//  assert(op2->GetTime() == time);
-//  assert(op2->GetTime(count) == time * count);
-//
-//  assert(op3->GetAction() == action);
-//  assert(op3->GetTime() == time);
-//  assert(op3->GetTime(count) == count * time);
-//
-//  time = 1.1;
-//  op2->SetTime(time);
-//  assert(op2->GetTime() == time);
-//  assert(op2->GetTime(count) == time * count);
-//
-//  std::cout << "All tests are completed!"<< std::endl;
-//  return 0;
   auto ing1 = Ingredient("potato", "kg", 10);
   auto ing2 = Ingredient("onion", "unit", 6);
   auto ing3 = Ingredient("carrot", "unit", 2);
@@ -236,8 +92,17 @@ int main() {
   auto r = new Recipe(name, time, &q);
   assert(r->GetName() == name);
   assert(r->GetTime() == time);
-
-  std::cout << r->Print();
+  std::string test_rez = "Borshch | 36000.3\n"
+                         "[10 kg of potato]\n"
+                         "(chop : 20.000000)\n"
+                         "(boil : 1000.000000)\n"
+                         "(put : 1.000000)\n"
+                         "[6 unit of onion]\n"
+                         "(chop : 12.000000)\n"
+                         "(fry : 300.000000)\n"
+                         "(put : 0.600000)\n";
+  assert(r->Print() == test_rez);
+//  std::cout << r->Print();
 
 // Tree Recipe test
   Tree tr;
@@ -264,10 +129,16 @@ int main() {
   name = "Salad";
   time = 200;
   auto rt = new RecipeTree(name, time, &tr);
-  std::cout << rt->Print();
 
   assert(rt->GetName() == name);
   assert(rt->GetTime() == time);
+  test_rez = "Salad | 200\n"
+             "(put : 0.100000) <- (boil : 100.000000) <- (chop : 2.000000) <- [10 kg of potato]\n"
+             "                    (fry : 50.000000) <- (chop : 2.000000) <- [6 unit of onion]\n"
+             "                                                              [2 unit of carrot]\n"
+             "(fry : 50.000000) <- (chop : 2.000000) <- [10 kg of potato]\n";
+  assert(rt->Print() == test_rez);
+//  std::cout << rt->Print();
 
   std::cout << std::endl;
   std::cout << "All tests are completed!"<< std::endl;
